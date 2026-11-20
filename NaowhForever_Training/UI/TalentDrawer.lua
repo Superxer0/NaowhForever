@@ -210,6 +210,7 @@ end
 
 local function BuildPanel(view)
     local panel = Parts.SidePanel({}, NewBody, FullOpacity)
+    panel:Hide()
     panel.title:SetText(view.title)
     panel.close._onClick = function()
         S.Set(view.openKey, false)
