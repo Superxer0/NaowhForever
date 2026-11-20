@@ -182,6 +182,7 @@ ns.FEATURES = {
         spellbook = false,
         demonBooks = false,
         weaponsShown = false,
+        nextTalent = false,
     },
     discovery = {
         enabled = false,
