@@ -11,7 +11,7 @@ local EVENTS = {
     "TRAIT_TREE_CHANGED", "TRAIT_TREE_CURRENCY_INFO_UPDATED", "PLAYER_TALENT_UPDATE",
 }
 local SPELL_EVENT = "SPELL_DATA_LOAD_RESULT"
-local MAX_LOOKS = 10
+local MAX_RETRIES = 10
 local GLOW_KEY = "nextTalentGlow"
 local DRAWER_KEY = "nextTalentDrawer"
 local TEXT_TITLE = ns.L("Next Talent")
@@ -19,9 +19,12 @@ local TEXT_TITLE = ns.L("Next Talent")
 local view = { title = TEXT_TITLE, openKey = DRAWER_KEY }
 
 local events
-local installed, queued = false, false
-local listening, listeningForSpells, ellesmereHooked = false, false, false
-local looks = 0
+local installed = false
+local queued = false
+local listeningForTalents = false
+local listeningForSpellNames = false
+local ellesmereHooked = false
+local retries = 0
 local hooked = {}
 local Refresh
 
@@ -36,25 +39,28 @@ local function Queue()
 end
 
 local function Schedule()
-    if not (installed and On()) then return end
-    looks = 0
+    if not installed or not On() then return end
+    retries = 0
     Queue()
 end
 
-local function Listen(windowOpen, nameLoading)
-    if windowOpen ~= listening then
-        listening = windowOpen
-        if windowOpen then
-            for _, event in ipairs(EVENTS) do events:RegisterEvent(event) end
-        else
-            events:UnregisterAllEvents()
-            listeningForSpells = false
+local function ListenForTalents(windowOpen)
+    if windowOpen == listeningForTalents then return end
+    listeningForTalents = windowOpen
+    if windowOpen then
+        for _, event in ipairs(EVENTS) do
+            events:RegisterEvent(event)
         end
+    else
+        events:UnregisterAllEvents()
+        listeningForSpellNames = false
     end
-    local wantSpells = windowOpen and nameLoading
-    if wantSpells == listeningForSpells then return end
-    listeningForSpells = wantSpells
-    if wantSpells then
+end
+
+local function ListenForSpellNames(wanted)
+    if wanted == listeningForSpellNames then return end
+    listeningForSpellNames = wanted
+    if wanted then
         events:RegisterEvent(SPELL_EVENT)
     else
         events:UnregisterEvent(SPELL_EVENT)
@@ -69,11 +75,13 @@ local function Hook(page)
 end
 
 local function OnEllesmereEscape(frame)
-    if frame and frame == EUI_ClassicTalents then Hook(frame) end
+    if not frame then return end
+    if frame == EUI_ClassicTalents then Hook(frame) end
 end
 
 local function HookEllesmere()
-    if ellesmereHooked or not (EllesmereUI and EllesmereUI.RegisterEscapeClose) then return end
+    if ellesmereHooked then return end
+    if not EllesmereUI or not EllesmereUI.RegisterEscapeClose then return end
     ellesmereHooked = true
     hooksecurefunc(EllesmereUI, "RegisterEscapeClose", OnEllesmereEscape)
 end
@@ -92,57 +100,72 @@ end
 
 local function UpdateDrawer(window, model)
     Next.PaintButton(view)
-    if not S.Get(DRAWER_KEY) then return Next.HideDrawer(view, false) end
-    local key = Next.ModelKey(model)
-    if key ~= view.lastKey then
-        view.lastKey = key
+    if not S.Get(DRAWER_KEY) then
+        Next.HideDrawer(view, false)
+        return
+    end
+    local summary = Next.DrawerSummary(model)
+    if summary ~= view.paintedSummary then
+        view.paintedSummary = summary
         Next.PaintDrawer(view, model)
     end
     Next.ShowDrawer(view, window)
 end
 
 local function UpdateMark(window, model)
-    local nextTalent = model.count > 0 and model.rows[1]
-    if not (nextTalent and S.Get(GLOW_KEY)) then return Next.PlaceMark(view.mark, nil) end
+    if model.count == 0 or not S.Get(GLOW_KEY) then
+        Next.PlaceMark(view.mark, nil)
+        return
+    end
+    local nextTalent = model.rows[1]
     local button = Next.ButtonFor(view.mark, window, nextTalent.node)
     Next.PlaceMark(view.mark, button, nextTalent.ready)
-    view.missing = button == nil
+    if not button then view.buttonMissing = true end
 end
 
 local function UpdateView()
-    view.missing, view.loading = false, false
+    view.buttonMissing = false
+    view.namesLoading = false
     local window = Next.ClassWindow()
-    if not window then return ClearView() end
+    if not window then
+        ClearView()
+        return
+    end
     view.open = true
     Hook(window.content)
     if view.docked ~= window.content then
-        view.docked, view.lastKey = window.content, nil
+        view.docked = window.content
+        view.paintedSummary = nil
         Next.HideDrawer(view, false)
         Next.Dock(view, window)
     end
     local model = Next.ClassModel()
-    view.loading = model.retry
+    view.namesLoading = model.namesLoading
     UpdateDrawer(window, model)
     UpdateMark(window, model)
 end
 
 function Refresh()
     queued = false
-    if not (installed and On()) then return end
+    if not installed or not On() then return end
     UpdateView()
-    Listen(view.open, view.loading)
-    if view.missing and looks < MAX_LOOKS then
-        looks = looks + 1
+    ListenForTalents(view.open)
+    ListenForSpellNames(view.open and view.namesLoading)
+    if view.buttonMissing and retries < MAX_RETRIES then
+        retries = retries + 1
         Queue()
     end
 end
 
 local function Quiet()
     if events then events:UnregisterAllEvents() end
-    listening, listeningForSpells = false, false
+    listeningForTalents = false
+    listeningForSpellNames = false
     Next.HideDrawer(view, true)
     if view.mark then Next.PlaceMark(view.mark, nil) end
-    view.open, view.docked, view.lastKey = false, nil, nil
+    view.open = false
+    view.docked = nil
+    view.paintedSummary = nil
 end
 
 local function Install()
@@ -150,18 +173,26 @@ local function Install()
     events = CreateFrame("Frame")
     events:SetScript("OnEvent", Schedule)
     view.mark = Next.NewMark()
-    for _, name in ipairs(WINDOW_ADDONS) do EventUtil.ContinueOnAddOnLoaded(name, OnWindowAddOnLoaded) end
+    for _, name in ipairs(WINDOW_ADDONS) do
+        EventUtil.ContinueOnAddOnLoaded(name, OnWindowAddOnLoaded)
+    end
 end
 
 local function Apply()
-    if not On() then return Quiet() end
+    if not On() then
+        Quiet()
+        return
+    end
     if not installed then Install() end
     Schedule()
 end
 
 local function OnSettingChanged(key)
-    if key == "enabled" or key == "nextTalent" then return Apply() end
-    if key == GLOW_KEY or key == DRAWER_KEY then Schedule() end
+    if key == "enabled" or key == "nextTalent" then
+        Apply()
+    elseif key == GLOW_KEY or key == DRAWER_KEY then
+        Schedule()
+    end
 end
 
 local function OnLogin(self)

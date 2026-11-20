@@ -1,8 +1,6 @@
 -- TalentMark.lua: the glow on the next talent, a border in its button's shape that pulses while a point is free.
 local ns = _G.NaowhForever
 
-local min = math.min
-
 local T = ns.THEME
 local Next = ns.Training.Next
 
@@ -20,7 +18,9 @@ local function Tint(texture, alpha)
 end
 
 local function AtlasOK(atlas)
-    return type(atlas) == "string" and atlas ~= "" and C_Texture.GetAtlasInfo(atlas) ~= nil
+    if type(atlas) ~= "string" then return false end
+    if atlas == "" then return false end
+    return C_Texture.GetAtlasInfo(atlas) ~= nil
 end
 
 local function NewLayer(mark, drawLayer, additive)
@@ -30,12 +30,10 @@ local function NewLayer(mark, drawLayer, additive)
     return texture
 end
 
-local function NewEdge(mark, pointA, xA, yA, pointB, xB, yB)
+local function NewEdge(mark)
     local color = T.accentSoft
     local edge = mark:CreateTexture(nil, "OVERLAY")
     edge:SetColorTexture(color.r, color.g, color.b, 1)
-    edge:SetPoint(pointA, xA, yA)
-    edge:SetPoint(pointB, xB, yB)
     edge:Hide()
     mark.edges[#mark.edges + 1] = edge
     return edge
@@ -43,10 +41,22 @@ end
 
 local function Edges(mark)
     mark.edges = {}
-    NewEdge(mark, "TOPLEFT", -EDGE_OUT, EDGE_OUT, "TOPRIGHT", EDGE_OUT, EDGE_OUT):SetHeight(EDGE_W)
-    NewEdge(mark, "BOTTOMLEFT", -EDGE_OUT, -EDGE_OUT, "BOTTOMRIGHT", EDGE_OUT, -EDGE_OUT):SetHeight(EDGE_W)
-    NewEdge(mark, "TOPLEFT", -EDGE_OUT, EDGE_OUT, "BOTTOMLEFT", -EDGE_OUT, -EDGE_OUT):SetWidth(EDGE_W)
-    NewEdge(mark, "TOPRIGHT", EDGE_OUT, EDGE_OUT, "BOTTOMRIGHT", EDGE_OUT, -EDGE_OUT):SetWidth(EDGE_W)
+    local top = NewEdge(mark)
+    top:SetPoint("TOPLEFT", -EDGE_OUT, EDGE_OUT)
+    top:SetPoint("TOPRIGHT", EDGE_OUT, EDGE_OUT)
+    top:SetHeight(EDGE_W)
+    local bottom = NewEdge(mark)
+    bottom:SetPoint("BOTTOMLEFT", -EDGE_OUT, -EDGE_OUT)
+    bottom:SetPoint("BOTTOMRIGHT", EDGE_OUT, -EDGE_OUT)
+    bottom:SetHeight(EDGE_W)
+    local left = NewEdge(mark)
+    left:SetPoint("TOPLEFT", -EDGE_OUT, EDGE_OUT)
+    left:SetPoint("BOTTOMLEFT", -EDGE_OUT, -EDGE_OUT)
+    left:SetWidth(EDGE_W)
+    local right = NewEdge(mark)
+    right:SetPoint("TOPRIGHT", EDGE_OUT, EDGE_OUT)
+    right:SetPoint("BOTTOMRIGHT", EDGE_OUT, -EDGE_OUT)
+    right:SetWidth(EDGE_W)
 end
 
 local function Pulse(mark)
@@ -60,24 +70,32 @@ local function Pulse(mark)
 end
 
 local function ShapeAtlas(button)
-    local border = button.StateBorder
-    local atlas = border and border:GetAtlas()
-    if not AtlasOK(atlas) and type(button.artSet) == "table" then
-        atlas = button.artSet.selectable or button.artSet.normal
+    if button.StateBorder then
+        local atlas = button.StateBorder:GetAtlas()
+        if AtlasOK(atlas) then return atlas end
     end
+    local artSet = button.artSet
+    if type(artSet) ~= "table" then return nil end
+    local atlas = artSet.selectable or artSet.normal
     if AtlasOK(atlas) then return atlas end
+    return nil
 end
 
 local function HaloAtlas(button)
-    local atlas = type(button.artSet) == "table" and button.artSet.glow
-    if not AtlasOK(atlas) and button.Glow then atlas = button.Glow:GetAtlas() end
-    if AtlasOK(atlas) then return atlas end
+    local artSet = button.artSet
+    if type(artSet) == "table" and AtlasOK(artSet.glow) then return artSet.glow end
+    if button.Glow then
+        local atlas = button.Glow:GetAtlas()
+        if AtlasOK(atlas) then return atlas end
+    end
+    return nil
 end
 
 local function ArtSize(button, art, scale)
-    local width, height = 0, 0
-    if art then width, height = art:GetSize() end
-    if width and width > 0 then return width, height end
+    if art then
+        local width, height = art:GetSize()
+        if width and width > 0 then return width, height end
+    end
     return button:GetWidth() * scale, button:GetHeight() * scale
 end
 
@@ -98,11 +116,13 @@ local function ShapeArt(mark, button)
         mark.shine:SetSize(width, height)
         mark.outer:SetSize(width * OUTER_SCALE, height * OUTER_SCALE)
     end
-    local shaped = atlas ~= nil
-    mark.ring:SetShown(shaped)
-    mark.shine:SetShown(shaped)
-    mark.outer:SetShown(shaped)
-    for _, edge in ipairs(mark.edges) do edge:SetShown(not shaped) end
+    local hasShape = atlas ~= nil
+    mark.ring:SetShown(hasShape)
+    mark.shine:SetShown(hasShape)
+    mark.outer:SetShown(hasShape)
+    for _, edge in ipairs(mark.edges) do
+        edge:SetShown(not hasShape)
+    end
 end
 
 local function HaloArt(mark, button)
@@ -114,7 +134,8 @@ local function HaloArt(mark, button)
         mark.halo:SetAtlas(atlas)
         Tint(mark.halo, HALO_ALPHA)
     end
-    mark.halo:SetSize(ArtSize(button, button.Glow, HALO_SCALE))
+    local width, height = ArtSize(button, button.Glow, HALO_SCALE)
+    mark.halo:SetSize(width, height)
 end
 
 function Next.NewMark()
@@ -141,10 +162,12 @@ function Next.PlaceMark(mark, button, ready)
         mark:SetAllPoints(button)
         mark.button = button
     end
-    mark:SetFrameLevel(min(button:GetFrameLevel() + LEVEL_ABOVE, MAX_FRAME_LEVEL))
+    local level = math.min(button:GetFrameLevel() + LEVEL_ABOVE, MAX_FRAME_LEVEL)
+    mark:SetFrameLevel(level)
     ShapeArt(mark, button)
     HaloArt(mark, button)
-    mark.halo:SetShown(ready and mark.hasHalo)
+    local showHalo = ready and mark.hasHalo
+    mark.halo:SetShown(showHalo)
     if ready then
         if not mark.pulse:IsPlaying() then
             mark:SetAlpha(1)
@@ -159,6 +182,9 @@ end
 
 function Next.ButtonFor(mark, window, node)
     local current = mark.button
-    if current and current:IsVisible() and Next.NodeOf(current) == node then return current end
+    if current then
+        local stillThere = current:IsVisible() and Next.NodeOf(current) == node
+        if stillThere then return current end
+    end
     return Next.FindButton(window, node)
 end

@@ -205,13 +205,15 @@ view files and the window share.
 - A talent's button is found with the game's own lookups (GetTalentButtonByNodeID, then
   EnumerateAllTalentButtons). EllesmereUI's Classic Talents has neither, so its shown children are searched,
   at most 6 deep. A button not drawn yet is looked for again on the next frames, at most 10 times
-  (`MAX_LOOKS`).
+  (`MAX_RETRIES`).
 - The glow is a frame of its own on the talent's button, in the button's own border shape, tinted with the
   theme's accent. Nothing of the button's is changed or hidden. The windows' OnShow and OnHide are
   post-hooked (HookScript), and EllesmereUI's window, made the first time it opens, is found through a
   hooksecurefunc on `EllesmereUI.RegisterEscapeClose`.
 - The panel is a `Parts.SidePanel` on UIParent beside the window, so its build menu draws over the talent
   tree and not under it.
+- The panel's button copies the Town Pins button on the world map: 32 square, the logo 4 in, on a 0.9 dark
+  fill, so it stands out on the talent window. Its border stays lit while the panel is open.
 - In the panel, the next talent's name and its cost sit `BIG_TEXT_DROP` (1px) inside the top and bottom of
   its icon, where the Naowh font's letters line up with the icon's edges.
 - Under the Gamepad interface style Next Talent stays off, as the Spellbook Tab does: that style moves

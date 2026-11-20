@@ -21,25 +21,35 @@ local function Scan(frame, node, depth)
             if found then return found end
         end
     end
+    return nil
 end
 
-local function FindInButtonList(page, node)
-    for first, second in page:EnumerateAllTalentButtons() do
-        if type(first) == "table" and NodeOf(first) == node then return first end
-        if type(second) == "table" and NodeOf(second) == node then return second end
+local function FindInButtonPool(page, node)
+    for key, value in page:EnumerateAllTalentButtons() do
+        local button = value
+        if type(key) == "table" then button = key end
+        if type(button) == "table" and NodeOf(button) == node then return button end
     end
+    return nil
 end
 
 local function BlizzardFind(page, node)
-    local button = page.GetTalentButtonByNodeID and page:GetTalentButtonByNodeID(node)
-    if button then return button end
-    button = page.EnumerateAllTalentButtons and FindInButtonList(page, node)
-    if button then return button end
+    if page.GetTalentButtonByNodeID then
+        local button = page:GetTalentButtonByNodeID(node)
+        if button then return button end
+    end
+    if page.EnumerateAllTalentButtons then
+        local button = FindInButtonPool(page, node)
+        if button then return button end
+    end
     return Scan(page, node, 0)
 end
 
 local function FillWindow(window, outer, content, search, scan)
-    window.outer, window.content, window.search, window.scan = outer, content, search, scan
+    window.outer = outer
+    window.content = content
+    window.search = search
+    window.scan = scan
     return window
 end
 
@@ -56,6 +66,7 @@ function Next.ClassWindow()
     if ellesmere and ellesmere:IsVisible() then
         return FillWindow(classWindow, ellesmere, ellesmere, nil, true)
     end
+    return nil
 end
 
 function Next.FindButton(window, node)

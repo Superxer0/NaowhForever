@@ -1,9 +1,6 @@
 -- NextTalent.lua: the next points to take from a build, and each character's own pick of build for the talent window.
 local ns = _G.NaowhForever
 
-local max, min = math.max, math.min
-local concat = table.concat
-
 local Training = ns.Training
 local C = Training.C
 local Style = Training.Style
@@ -36,7 +33,9 @@ local TEXT_FOLLOWING = ns.L("You follow %s, so its points are spent for you. Sto
     .. "to pick them yourself.")
 
 local classModel = { rows = {}, count = 0 }
-local ranks, timesNamed, extraNames = {}, {}, {}
+local learnedRanks = {}
+local buildRanks = {}
+local extraNames = {}
 
 Next.UPCOMING = UPCOMING
 Next.FOLLOWED = FOLLOWED
@@ -50,11 +49,13 @@ local function BuildByKey(builds, classID, key)
     for _, build in ipairs(builds) do
         if Training.BuildKey(classID, build) == key then return build end
     end
+    return nil
 end
 
 local function OwnPick(builds, classID)
     local pick = ns.Shared.CharacterData(PICK_DATA, false)
-    if not (pick and pick.key and pick.class == classID) then return nil end
+    if not pick or not pick.key then return nil end
+    if pick.class ~= classID then return nil end
     return BuildByKey(builds, classID, pick.key)
 end
 
@@ -64,29 +65,31 @@ local function FollowedBuild(classID)
     return build
 end
 
-local function ReadRanks(talents)
-    wipe(ranks)
+local function ReadLearnedRanks(talents)
+    wipe(learnedRanks)
     local config = C_ClassTalents.GetActiveConfigID()
     if not config then return nil end
     local spent = 0
     for node in pairs(talents) do
         local info = C_Traits.GetNodeInfo(config, node)
-        local rank = max(info.currentRank or 0, info.activeRank or 0)
-        ranks[node] = rank
+        local rank = math.max(info.currentRank or 0, info.activeRank or 0)
+        learnedRanks[node] = rank
         spent = spent + rank
     end
     return spent
 end
 
 local function LevelFor(spent, place)
-    return spent + place + FIRST_TALENT_LEVEL - 1
+    local pointNumber = spent + place
+    return FIRST_TALENT_LEVEL + pointNumber - 1
 end
 
-local function WhenText(level, ready, long)
+local function WhenText(level, ready, forBigRow)
     if level > MAX_LEVEL then return ns.Color(Style.WARN_RGB, TEXT_NO_POINT) end
-    if ready then return ns.Color(Style.UP_RGB, long and TEXT_SPEND_NOW or TEXT_NOW) end
-    local text = long and TEXT_AT_LEVEL or TEXT_LVL
-    return ns.Color("muted", text:format(level))
+    if ready and forBigRow then return ns.Color(Style.UP_RGB, TEXT_SPEND_NOW) end
+    if ready then return ns.Color(Style.UP_RGB, TEXT_NOW) end
+    if forBigRow then return ns.Color("muted", TEXT_AT_LEVEL:format(level)) end
+    return ns.Color("muted", TEXT_LVL:format(level))
 end
 
 local function SpellName(spellID)
@@ -97,12 +100,20 @@ local function SpellName(spellID)
 end
 
 local function SpellIcon(spellID)
-    return C_Spell.GetSpellTexture(spellID) or QUESTION_ICON
+    local icon = C_Spell.GetSpellTexture(spellID)
+    if icon then return icon end
+    return QUESTION_ICON
 end
 
 local function ClearModel(model)
-    model.notice, model.progress, model.extra, model.follow = nil, nil, nil, nil
-    model.pickKey, model.builds, model.retry = nil, nil, false
+    model.notice = nil
+    model.progress = nil
+    model.extra = nil
+    model.follow = nil
+    model.pickKey = nil
+    model.builds = nil
+    model.followed = nil
+    model.namesLoading = false
     model.count = 0
 end
 
@@ -121,66 +132,76 @@ local function AddClassRow(model, tree, node, rank, spent)
     local row, place = AddRow(model)
     local talent = tree.talents[node]
     local spellID = talent[NODE_SPELL]
-    local name, loaded = SpellName(spellID)
+    local name, nameLoaded = SpellName(spellID)
     local level = LevelFor(spent, place)
-    local ready = level <= min(UnitLevel("player"), MAX_LEVEL)
-    row.node, row.spellID, row.icon = node, spellID, SpellIcon(spellID)
+    local myLevel = math.min(UnitLevel("player"), MAX_LEVEL)
+    local ready = level <= myLevel
+    local specName = tree.specs[talent[NODE_COLUMN]]
+    row.node = node
+    row.spellID = spellID
+    row.icon = SpellIcon(spellID)
     row.name = TEXT_RANK:format(name, rank, talent[NODE_RANKS])
-    row.sub = TEXT_SPEC_WHEN:format(tree.specs[talent[NODE_COLUMN]], WhenText(level, ready, true))
+    row.sub = TEXT_SPEC_WHEN:format(specName, WhenText(level, ready, true))
     row.when = WhenText(level, ready, false)
     row.ready = ready
-    if not loaded then model.retry = true end
+    if not nameLoaded then model.namesLoading = true end
 end
 
 local function ExtraText(tree)
     wipe(extraNames)
-    for node, rank in pairs(ranks) do
-        local over = rank - (timesNamed[node] or 0)
-        if over > 0 then
+    for node, rank in pairs(learnedRanks) do
+        local extraRanks = rank - (buildRanks[node] or 0)
+        if extraRanks > 0 then
             if #extraNames == EXTRA_SHOWN then
                 extraNames[#extraNames + 1] = TEXT_MORE
                 break
             end
             local name = SpellName(tree.talents[node][NODE_SPELL])
-            extraNames[#extraNames + 1] = name .. " +" .. over
+            extraNames[#extraNames + 1] = name .. " +" .. extraRanks
         end
     end
     if #extraNames == 0 then return nil end
-    return TEXT_NOT_IN_BUILD:format(ns.Color(Style.WARN_RGB, concat(extraNames, ", ")))
+    local list = table.concat(extraNames, ", ")
+    return TEXT_NOT_IN_BUILD:format(ns.Color(Style.WARN_RGB, list))
 end
 
 local function ReadBuild(model, tree, build)
-    local spent = ReadRanks(tree.talents)
+    local spent = ReadLearnedRanks(tree.talents)
     if not spent then return false end
-    wipe(timesNamed)
-    local done = 0
+    wipe(buildRanks)
+    local learned = 0
     for _, node in ipairs(build.points) do
-        local wanted = (timesNamed[node] or 0) + 1
-        timesNamed[node] = wanted
-        if (ranks[node] or 0) >= wanted then
-            done = done + 1
+        local rankWanted = (buildRanks[node] or 0) + 1
+        buildRanks[node] = rankWanted
+        local rankHave = learnedRanks[node] or 0
+        if rankHave >= rankWanted then
+            learned = learned + 1
         elseif model.count < UPCOMING then
-            AddClassRow(model, tree, node, wanted, spent)
+            AddClassRow(model, tree, node, rankWanted, spent)
         end
     end
-    model.progress = TEXT_PROGRESS:format(done, #build.points)
+    model.progress = TEXT_PROGRESS:format(learned, #build.points)
     model.extra = ExtraText(tree)
     return true
 end
 
 function Next.BuildLabel(build)
     local name = build.name
-    if build.spec and not name:find(build.spec, 1, true) then name = name .. " (" .. build.spec .. ")" end
-    return name
+    if not build.spec then return name end
+    local specInName = name:find(build.spec, 1, true) ~= nil
+    if specInName then return name end
+    return name .. " (" .. build.spec .. ")"
 end
 
 function Next.SetPick(key)
     local pick = ns.Shared.CharacterData(PICK_DATA, true)
     if not pick then return end
     if key == FOLLOWED then
-        pick.class, pick.key = nil, nil
+        pick.class = nil
+        pick.key = nil
     else
-        pick.class, pick.key = MyClass(), key
+        pick.class = MyClass()
+        pick.key = key
     end
     Next.Redraw()
 end
@@ -193,14 +214,25 @@ function Next.ClassModel()
     local own = OwnPick(builds, classID)
     local followed = FollowedBuild(classID)
     local tree = ns.TrainingBuilds[classID]
-    model.classID, model.builds = classID, builds
-    model.pickKey = own and Training.BuildKey(classID, own) or FOLLOWED
+    model.classID = classID
+    model.builds = builds
     model.followed = followed
-    if followed then model.follow = ns.Color(Style.WARN_RGB, TEXT_FOLLOWING:format(followed.name)) end
+    if own then
+        model.pickKey = Training.BuildKey(classID, own)
+    else
+        model.pickKey = FOLLOWED
+    end
+    if followed then
+        model.follow = ns.Color(Style.WARN_RGB, TEXT_FOLLOWING:format(followed.name))
+    end
     local build = own or followed
     if not build then
         model.notice = TEXT_PICK_ONE
-    elseif not (tree and ReadBuild(model, tree, build)) then
+        return model
+    end
+    local treeRead = false
+    if tree then treeRead = ReadBuild(model, tree, build) end
+    if not treeRead then
         model.notice = TEXT_NOT_READY
     elseif model.count == 0 then
         model.notice = ns.Color(Style.UP_RGB, TEXT_ALL_LEARNED)
