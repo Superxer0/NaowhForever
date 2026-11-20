@@ -17,7 +17,7 @@ local BIG_ICON, SMALL_ICON, ICON_GAP, ICON_CROP = 30, 16, 10, 0.08
 local BIG_TEXT_DROP = 1
 local RULE_ALPHA = 0.6
 local CONTROL_LEVEL = 2
-local BUTTON_GAP, SEARCH_LEVEL = 8, 2
+local UNDER_SEARCH, SEARCH_LEVEL = 64, 2
 local BUTTON_SIZE, BUTTON_LOGO_INSET, BUTTON_ALPHA = 32, 4, 0.9
 local NO_SEARCH_X, NO_SEARCH_Y, NO_SEARCH_LEVEL = -30, -4, 20
 local MAX_FRAME_LEVEL = 9000
@@ -393,7 +393,7 @@ function Next.Dock(view, window)
     button:ClearAllPoints()
     local search = window.search
     if search then
-        button:SetPoint("RIGHT", search, "LEFT", -BUTTON_GAP, 0)
+        button:SetPoint("TOPRIGHT", search, "BOTTOMRIGHT", 0, -UNDER_SEARCH)
         button:SetFrameLevel(LevelAbove(search, SEARCH_LEVEL))
     else
         button:SetPoint("TOPRIGHT", window.outer, "TOPRIGHT", NO_SEARCH_X, NO_SEARCH_Y)

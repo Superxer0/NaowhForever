@@ -213,7 +213,9 @@ view files and the window share.
 - The panel is a `Parts.SidePanel` on UIParent beside the window, so its build menu draws over the talent
   tree and not under it.
 - The panel's button copies the Town Pins button on the world map: 32 square, the logo 4 in, on a 0.9 dark
-  fill, so it stands out on the talent window. Its border stays lit while the panel is open.
+  fill, so it stands out on the talent window. Its border stays lit while the panel is open. Like the Town
+  Pins button in the map's corner, it sits in the corner of the talent trees, under the Unspent Talents
+  count: 64 below the search box's bottom right corner (`UNDER_SEARCH`).
 - In the panel, the next talent's name and its cost sit `BIG_TEXT_DROP` (1px) inside the top and bottom of
   its icon, where the Naowh font's letters line up with the icon's edges.
 - Under the Gamepad interface style Next Talent stays off, as the Spellbook Tab does: that style moves
