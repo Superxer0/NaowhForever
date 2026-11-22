@@ -1,4 +1,4 @@
--- Consumables.lua: your best food and drink (ns.BestFoodAndDrink), the food and drink buttons' names and what an empty one shows, healthstones, healing and mana potions, best first, the food spells and Well Fed buffs, and whether you use mana.
+-- Consumables.lua: your best food and drink (ns.BestFoodAndDrink), the food and drink buttons' names and what an empty one shows, healthstones, healing and mana potions, best first, the food spells and Well Fed buffs, whether you use mana and whether you are drinking.
 local ns = _G.NaowhForever
 
 local CONJURED = {
@@ -17,6 +17,7 @@ local NO_MANA = { WARRIOR = true, ROGUE = true }
 local CONJURED_BONUS = 1000
 local FOOD_AND_DRINK_BONUS = 0.5
 local NUTRITIOUS_PENALTY = 0.25
+local WELL_FED_BONUS = 2000
 local REQUIRED_LEVEL = 5
 local TEXT_NO_FOOD = ns.L("No food in your bags")
 local TEXT_NO_DRINK = ns.L("No drink in your bags")
@@ -38,6 +39,15 @@ function ns.IsDrink(itemID)
     local spell = C_Item.GetItemSpell(itemID)
     return spell ~= nil
         and (spell == C_Spell.GetSpellName(DRINK_SPELL) or spell == C_Spell.GetSpellName(NUTRITIOUS_DRINK))
+end
+
+local function HasAura(spellID)
+    local name = C_Spell.GetSpellName(spellID)
+    return name ~= nil and C_UnitAuras.GetAuraDataBySpellName("player", name, "HELPFUL") ~= nil
+end
+
+function ns.IsDrinking()
+    return HasAura(DRINK_SPELL) or HasAura(NUTRITIOUS_DRINK)
 end
 
 function ns.IsFoodAndDrink(itemID)
@@ -72,7 +82,7 @@ local function Score(id, bonus, conjured)
     if allowed then return (CONJURED[id] and conjured or 0) + bonus + required end
 end
 
-local function BestFoodAndDrink()
+local function BestFoodAndDrink(wellFedFirst)
     local foodName, drinkName = C_Spell.GetSpellName(FOOD_SPELL), C_Spell.GetSpellName(DRINK_SPELL)
     local nutritiousFood, nutritiousDrink = C_Spell.GetSpellName(NUTRITIOUS_FOOD), C_Spell.GetSpellName(NUTRITIOUS_DRINK)
     local usesMana = ns.UsesMana()
@@ -89,7 +99,10 @@ local function BestFoodAndDrink()
             local isDrink = usesMana and (both or (spell and (spell == drinkName or spell == nutritiousDrink)))
             local bonus = (both and bothBonus or 0) - (nutritious and NUTRITIOUS_PENALTY or 0)
             local s = (isFood or isDrink) and not C_Item.IsEquippableItem(id) and Score(id, bonus, conjured)
-            if s and isFood and (not foodScore or s > foodScore) then food, foodScore = id, s end
+            local fed = wellFedFirst and isFood
+                and (spell == nutritiousFood or ns.FOOD_SPELLS[select(2, C_Item.GetItemSpell(id))])
+            local f = s and fed and s + WELL_FED_BONUS or s
+            if f and isFood and (not foodScore or f > foodScore) then food, foodScore = id, f end
             if s and isDrink and (not drinkScore or s > drinkScore) then drink, drinkScore = id, s end
         end
     end

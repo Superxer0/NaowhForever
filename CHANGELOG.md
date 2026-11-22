@@ -2,6 +2,112 @@
 
 ## Unreleased
 
+## 1.4.6
+
+### Added
+- Professions: Highest Profit in the recipe list's Filter > Sort lists all your recipes in one list,
+  the most profitable first (needs Crafting Profit, Profit in Recipe List and a price scan).
+- Smart Macros > Food Macro: Well Fed First makes NF Food use food that gives Well Fed before
+  higher-level food without a buff.
+- Loot Feed Count Size, to make the number on each icon bigger or smaller without changing the item
+  names.
+
+### Changed
+- Dungeon Journal: boss loot updated from the latest Forever loot lists.
+- BiS List: picks updated from wowsrc.com's latest lists.
+
+### Fixed
+- Professions: a macro that clicks Create on an Enchanting recipe now enchants the item you chose
+  in the Naowh window, so one-button levelling macros work with the window on.
+- BiS List: items from an imported list show where they come from, such as Magician's Cord from Pix
+  Xizzix, and an item with no known source says so instead of World drop.
+- RestedXP: the Naowh window shows again with RestedXP 4.11.38.
+- Professions: with TradeSkillMaster loaded, a TSM button on the window's title bar switches to
+  TSM's crafting window, and TSM's Default UI button switches back.
+- BiS List: Auto lists no longer pick trinkets from the other faction's quests.
+- Professions: a recipe that makes several items per craft shows the whole craft's profit in the
+  recipe list, as the Profitable filter already counted it.
+
+## 1.4.5
+
+### Added
+- Gear & Trinkets: right-click a Trinket Bar slot in combat to pick what it takes next; it goes on
+  the moment combat ends, and its icon shows in the slot's corner until then.
+- Buff Reminders: the Other Buffs Reminder now includes Dragonbreath Chili you carry.
+- Buff Reminders: Profession Cooldown Reminders (off by default) for Transmute: Arcanite, Salt
+  Shaker, Mooncloth and Dedicated Study, with Remind With Hours Left and your other characters'
+  cooldowns. Turn it on under Buffs & Consumables > Profession Cooldowns.
+
+### Changed
+- Journey Card: changing Growth Direction now replays the card's steps, so you can see which edge
+  stays put.
+
+### Fixed
+- Stealth Reminder: no more Lua errors on boss pulls when Show Cooldown is on.
+- Profiles: a new character is offered the profile of the character you played last, not an old beta
+  or stress test character's.
+- Blessings: Greater Blessings are offered again for paladins with the Reagent Economy Legacy talent
+  who carry no Symbols of Kings.
+- BiS List: Sorcerer's, Darkmantle, Beastmaster's and Feralheart gloves, boots and bracers that
+  Forever renamed, such as Sorcerer's Gauntlets, now count as yours.
+
+## 1.4.4
+
+### Added
+- Gear Reminders: Argent Dawn Commission Reminder, an icon to put the trinket on in the Plaguelands,
+  Scholomance and Stratholme and to swap it back when you leave, with a click out of combat.
+- Zone Info: a Map Text Size slider for the on-map summary.
+- Gear & Trinkets: the Trinket Bar has a Square Icons option that trims the rounded edges off the
+  trinket icons, like the Gear Set Bar's.
+- Journeys: the Journey Card has a Growth Direction option, so it can grow down from its top edge or
+  up from its bottom edge instead of from its middle.
+- Bags & Junk: a Bag Clean-up card with the everyday bag settings in one place, and Keep Items Worth
+  More Than to keep valuable stacks off the Bag Space row and the Destroy Cheapest popup.
+- BiS List: a Route page (turn on Route Page on the BiS List's Lists card) lists every place your
+  picks come from, backups included, in the order you set with Up/Down, and drops each pick once you
+  have it or a better one.
+- Dungeon Journal: Alcaz Prison's map shows its bosses, its entrance and the stairs down, which open
+  with Overseer's Keyring.
+- Gear & Trinkets: Automatic Swaps can put a set on while drinking, in a form or stance, or in a
+  dungeon, raid or battleground.
+- Gear & Trinkets: Swap Weapons in Combat swaps a set's weapons at once when you click it on the
+  Gear Set Bar in combat.
+- Gear & Trinkets: Click Again to Take Off, and /nfgear equip, toggle and off for macros.
+- Gear & Trinkets: Trinket Queue puts the next ready trinket on when yours is on cooldown, and
+  Trinket Ready Alert says when one is ready.
+- Gear & Trinkets: the Trinket Bar can show your weapons or all your gear.
+- Gear & Trinkets: show or hide your helm and cloak per set, and Get From Bank, in the Gear Sets
+  window's More menu.
+
+### Changed
+- Dungeon Journal: its data is updated to WoW Forever build 1.60.1.71037.
+- QoL: Layer Tracker and Swap Layers With Others are removed, since Forever's next hotfix hides the
+  layer from addons. Auto-Accept Layer Swap stays.
+- Discovery: rare tooltips no longer name the layer of the last kill.
+- Gear & Trinkets: when an automatic swap ends and you were not wearing a set before it, your exact
+  items go back on.
+
+### Fixed
+- The Market: the Scan Prices button no longer runs into the title bar's other buttons.
+- BiS List: Forever's Dungeon Set 2 pieces, such as Sorcerer's Bindings, now count as yours.
+- BiS List: the Quests page lists more of the quests that reward your picks, with where they start
+  and whether they can be shared.
+- Destroy Cheapest Item: changing its settings while the popup is open updates the popup at once.
+- Profiles: characters that share a first name no longer switch each other's profile, and their
+  Blessings, BiS lists, Gear Sets, Quest List, XP Bar, Action Bars, Journeys and Training settings
+  are kept apart too.
+- Dungeon Journal: the Runs page no longer throws a Lua error when it opens.
+- Profiles, BiS lists, auction prices, alts and other per-character settings no longer reset since
+  the Forever client update that hides the realm name.
+- Invite Buttons: Battle.net friends can be invited again after the Forever client update.
+- Upgrade Marks: the upgrade percent on the auction house list no longer covers the item.
+- BiS List: Generate BiS List no longer suggests an off hand when your main hand pick is a
+  two-hander.
+- Dungeon Journal: Seeking Caitlin and Dragonmaw Rumors no longer count as to do once you take the
+  quest they lead to.
+- Gear & Trinkets: Wear While Mounted no longer swaps on a flight path, and a set asked for while
+  dead waits until you are alive.
+
 ## 1.4.3
 
 ### Changed
