@@ -217,6 +217,10 @@ view files and the window share.
 - The panel is a `Parts.SidePanel` on UIParent beside the window, so its build menu draws over the talent
   tree and not under it. Its rows are drawn by the shared row engine (`ns.Shared.View`), with four kinds of
   its own: the build picker, the next talent, the talents after it and the glow switch.
+- The panel is 340 wide, not the usual 380, to fit beside Blizzard's talent window. The game centers that
+  window, and on our test screen it left about 353 on its right: a 380 wide panel opened on the left there,
+  and forcing it right covered the window's close button. 340 is about the widest that fits that room with
+  the side panel's spare. Where even 340 has no room, it opens on the left, as any side panel does.
 - The Talent Window Panel setting turns the button and the panel on or off together. Whether the panel is
   open is kept apart from it, for the session only, as the Town Pins panel on the map is: it opens with the
   talent window, the button or the panel's x closes it, and the button opens it again. Another side panel

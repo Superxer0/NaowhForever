@@ -618,8 +618,9 @@ What a comment in the code used to say, in short. The house rules behind it are 
   already run out (`STOP_AGO` seconds long, started that long ago) leaves it still.
 - A window's backdrop paints its opacity into the colors, not with SetAlpha: a texture's alpha
   does not reach a gradient's colors.
-- A side panel opens beside the window it was opened from, on whichever side has room, closes
-  with it (a `HookScript` on our own window), and opening one closes the others. Its buttons
+- A side panel opens beside the window it was opened from, on whichever side has room for its
+  width, closes with it (a `HookScript` on our own window), and opening one closes the others.
+  It is `PANEL_W` wide unless the caller gives it a width of its own. Its buttons
   share its width with a count of at least 1: the game's Lua stops on a division by zero.
 - Sharing never goes through the chat box: opening it from addon code taints it, and the game
   then blocks the next message you send. Say is offered only inside an instance, the one place

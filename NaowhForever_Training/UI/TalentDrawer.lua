@@ -10,6 +10,7 @@ local Training = ns.Training
 local S = Training.Settings
 local Next = Training.Next
 
+local PANEL_W = 340
 local ROW_H, BIG_H, PICK_H = 28, 48, 40
 local BIG_ICON, SMALL_ICON, ICON_GAP, ICON_CROP = 30, 16, 10, 0.08
 local BIG_TEXT_DROP = 1
@@ -232,7 +233,7 @@ local function PanelHidden(panel)
 end
 
 local function BuildPanel(view)
-    local panel = Parts.SidePanel({}, NewBody, FullOpacity)
+    local panel = Parts.SidePanel({}, NewBody, FullOpacity, PANEL_W)
     panel:Hide()
     panel.drawer = view
     panel:HookScript("OnHide", PanelHidden)
