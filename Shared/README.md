@@ -58,7 +58,7 @@ Shared/
   UI/Parts.lua     the small parts: icons in text (Parts.Inline), smooth textures, hover cards (Parts.Tip,
                    Parts.TipLines), the chevron, links (Parts.FlipLink puts the chevron first, pointing
                    back: the Action Bars window's back link), icon buttons, the logo button (Parts.LogoButton:
-                   the Town Pins button on the world map, Next Talent's on the talent window), the flat hover
+                   the Town Pins button on the world map, the Talent Overlay's on the talent window), the flat hover
                    and pressed look on a bar button (Parts.Press: the item bars, Blessings, Gear Set and
                    Trinket bars, Group Buttons), a short label in a pill of its color
                    (Parts.Pill, Parts.SetPill: Group Inspect's "NF"), the worn bar, the Wowhead copy card

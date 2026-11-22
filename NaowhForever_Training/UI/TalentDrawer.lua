@@ -20,9 +20,12 @@ local UNDER_SEARCH, SEARCH_LEVEL = 64, 2
 local BUTTON_SIZE = 32
 local NO_SEARCH_X, NO_SEARCH_Y, NO_SEARCH_LEVEL = -30, -4, 20
 local MAX_FRAME_LEVEL = 9000
-local GLOW_KEY = "nextTalentGlow"
+local GLOW_KEY = "talentOverlayGlow"
 local NO_EVENTS = {}
+local BUILDS_TAB = "builds"
 local TEXT_BUILD = "Build"
+local TEXT_OPEN_BUILDS = "Open Builds"
+local TEXT_IMPORT = "Import"
 local TEXT_NEXT = "Next Talent"
 local TEXT_THEN = "Then"
 local TEXT_PROGRESS = "Progress"
@@ -51,6 +54,21 @@ end
 
 local function SetGlow(on)
     S.Set(GLOW_KEY, on)
+end
+
+local function OpenBuilds()
+    ns.OpenTrainingWindow(nil, BUILDS_TAB)
+end
+
+local function PickImported(classID, index)
+    local _, _, myClass = UnitClass("player")
+    if classID ~= myClass then return end
+    local build = Training.Builds(classID)[index]
+    Next.SetPick(Training.BuildKey(classID, build))
+end
+
+local function ImportBuild()
+    Training.PromptImport(PickImported)
 end
 
 local function SpellTip(row)
@@ -189,7 +207,7 @@ local Draw = {}
 function Draw:Redraw()
     local model = self.model
     self:Clear()
-    self:Section(TEXT_BUILD)
+    self:SectionLink(TEXT_BUILD, TEXT_OPEN_BUILDS, OpenBuilds, nil, TEXT_IMPORT, ImportBuild)
     self:Add("picker", model)
     self:Section(TEXT_NEXT)
     if model.notice then
@@ -270,6 +288,10 @@ function Next.DrawerSummary(model)
     AddPiece(model.pickKey)
     if model.builds then
         AddPiece(#model.builds)
+        for _, build in ipairs(model.builds) do
+            AddPiece(Training.BuildKey(model.classID, build))
+            AddPiece(Next.BuildLabel(build))
+        end
     else
         AddPiece(nil)
     end

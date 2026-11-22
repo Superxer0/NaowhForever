@@ -186,7 +186,7 @@ ns.FEATURES = {
         spellbook = false,
         demonBooks = false,
         weaponsShown = false,
-        nextTalent = false,
+        talentOverlay = false,
     },
     discovery = {
         enabled = false,

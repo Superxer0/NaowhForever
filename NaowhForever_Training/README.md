@@ -5,7 +5,7 @@ it costs, with the trainer's own prices once you have visited one. A road to 60 
 level that brings spells, a Builds tab with talent builds level by level (Naowh's, saved, imported,
 edited, followed as you level), a mini bar, a level-up toast, a panel beside your class trainer, a
 Trainable tab under the spellbook, a warlock's demon books, in the planner and at the demon trainer, and
-Next Talent, a glow on the next talent of a build on the talent window. Laid out like the [Dungeon Journal](../NaowhForever_DungeonJournal/README.md), on
+the Talent Overlay, a glow on the next talent of a build on the talent window. Laid out like the [Dungeon Journal](../NaowhForever_DungeonJournal/README.md), on
 [`Shared/`](../Shared/README.md).
 
 ## Layout
@@ -31,7 +31,7 @@ NaowhForever_Training/
   Grimoires.lua      Demon Books: the ranks each demon knows, read while it is out (Training.Grimoires)
   Weapons.lua        your weapon skills: their level, the weapons you carry, a weapon master's price
                      after your reputation discount (Training.WeaponSkills, Training.WeaponPrice)
-  NextTalent.lua     Next Talent: the next points to take from a build, and each character's pick of
+  NextTalent.lua     Talent Overlay: the next points to take from a build, and each character's pick of
                      build for the talent window (Training.Next)
   View/
     Style.lua        the planner's own look, over Shared/Style.lua (Training.Style)
@@ -50,7 +50,7 @@ NaowhForever_Training/
     TalentWindows.lua the open talent window (Blizzard's or EllesmereUI's), and a talent's button
     TalentMark.lua   the glow on the next talent
     TalentDrawer.lua the side panel beside the talent window, and the button that opens it
-    NextTalent.lua   turns Next Talent on and off, and redraws it while a talent window is open
+    TalentOverlay.lua turns the Talent Overlay on and off, and redraws it while a talent window is open
     SettingsPage.lua its settings page (Training Planner/Settings), declared as cards
 ```
 
@@ -192,12 +192,12 @@ view files and the window share.
   navigates the merchant from secure code. The tooltip line stays.
 - The books are not in the road's totals or the next visit: they come from another trainer, and a book for a
   demon never summoned may be known already.
-- Next Talent is off by default, and nothing of it is made while it is off: no frame, event or hook until it
+- The Talent Overlay is off by default, and nothing of it is made while it is off: no frame, event or hook until it
   is first turned on. Turning it off again unregisters its events and hides what it drew.
 - While it is on, the talent events are registered only while a talent window is open, and
   SPELL_DATA_LOAD_RESULT only while a talent's name is still loading. A burst of events draws once, a frame
   later. The model tables and their rows are reused, so a redraw makes no new tables.
-- Next Talent reads a talent's `currentRank` (`Training.Ranks` with unapplied points), not its
+- The Talent Overlay reads a talent's `currentRank` (`Training.Ranks` with unapplied points), not its
   `activeRank`: `currentRank` changes as you click a point in or take one back, before you apply, so the
   glow follows your clicks both ways.
 - The glow pulses only once the next talent can be bought (`canPurchaseRank`): your level gives the point,
@@ -217,6 +217,12 @@ view files and the window share.
 - The panel is a `Parts.SidePanel` on UIParent beside the window, so its build menu draws over the talent
   tree and not under it. Its rows are drawn by the shared row engine (`ns.Shared.View`), with four kinds of
   its own: the build picker, the next talent, the talents after it and the glow switch.
+- The panel's Build title has two links (`SectionLink`): Import, the planner's own paste prompt
+  (`Training.PromptImport`), which picks the build once it is added; and Open Builds, the planner's Builds
+  tab, to rename, edit or delete one. The picker lists only your own class's builds, since the glow can
+  only light talents on your own class's talent window. A build for another class is saved for that class.
+- The panel redraws only when what it shows changes (`Next.DrawerSummary`). That summary holds each
+  build's key and name, so renaming a build in the planner renames it in the panel too.
 - The panel is 340 wide, not the usual 380, to fit beside Blizzard's talent window. The game centers that
   window, and on our test screen it left about 353 on its right: a 380 wide panel opened on the left there,
   and forcing it right covered the window's close button. 340 is about the widest that fits that room with
@@ -232,7 +238,7 @@ view files and the window share.
   (`UNDER_SEARCH`).
 - In the panel, the next talent's name and its cost sit `BIG_TEXT_DROP` (1px) inside the top and bottom of
   its icon, where the Naowh font's letters line up with the icon's edges.
-- Under the Gamepad interface style Next Talent stays off, as the Spellbook Tab does: that style moves
+- Under the Gamepad interface style the Talent Overlay stays off, as the Spellbook Tab does: that style moves
   through the game's windows from secure code, and hooks on them would taint it.
 
 ## Checking

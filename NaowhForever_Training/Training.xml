@@ -30,6 +30,6 @@
     <Script file="UI\TalentWindows.lua"/>
     <Script file="UI\TalentMark.lua"/>
     <Script file="UI\TalentDrawer.lua"/>
-    <Script file="UI\NextTalent.lua"/>
+    <Script file="UI\TalentOverlay.lua"/>
     <Script file="UI\SettingsPage.lua"/>
 </Ui>

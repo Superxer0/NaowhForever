@@ -1,4 +1,4 @@
--- NextTalent.lua: turns the next-talent glow and side panel on and off, and redraws them while a talent window is open.
+-- TalentOverlay.lua: turns the Talent Overlay on and off, and redraws its glow and panel while a talent window is open.
 local ns = _G.NaowhForever
 
 local Training = ns.Training
@@ -12,9 +12,9 @@ local EVENTS = {
 }
 local SPELL_EVENT = "SPELL_DATA_LOAD_RESULT"
 local MAX_RETRIES = 10
-local GLOW_KEY = "nextTalentGlow"
-local DRAWER_KEY = "nextTalentDrawer"
-local TEXT_TITLE = ns.L("Next Talent")
+local GLOW_KEY = "talentOverlayGlow"
+local DRAWER_KEY = "talentOverlayDrawer"
+local TEXT_TITLE = ns.L("Talent Overlay")
 
 local view = { title = TEXT_TITLE, panelOpen = true }
 
@@ -29,7 +29,7 @@ local hooked = {}
 local Refresh
 
 local function On()
-    return Training.On() and S.Get("nextTalent") and not ns.GamepadStandDown()
+    return Training.On() and S.Get("talentOverlay") and not ns.GamepadStandDown()
 end
 
 local function Queue()
@@ -192,7 +192,7 @@ local function Apply()
 end
 
 local function OnSettingChanged(key)
-    if key == "enabled" or key == "nextTalent" then
+    if key == "enabled" or key == "talentOverlay" then
         Apply()
     elseif key == DRAWER_KEY then
         view.panelOpen = true

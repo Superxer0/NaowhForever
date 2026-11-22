@@ -16,6 +16,7 @@ local ROW_POINTS = 5
 local NODE_SPELL, NODE_RANKS, NODE_ROW, NODE_COLUMN, NODE_NEEDS = C.NODE_SPELL, C.NODE_RANKS, C.NODE_ROW, C.NODE_COLUMN, 6
 local DECODE_LIMITS = { maxChars = 100000, maxBytes = 1048576, maxDepth = 8, maxValues = 20000 }
 local BUILD_VERSION = 1
+local PASTE_MAX = 4000
 local NAOWH_KEY = "naowh"
 local TEXT_NOT_IN_TREE = ns.L("That talent is not in this class's tree.")
 local TEXT_ALL_SPENT = ns.L("All %d points are spent.")
@@ -25,6 +26,7 @@ local TEXT_TALENT_ABOVE = ns.L("the talent above it")
 local TEXT_NEEDS_POINTS = ns.L("Needs %d points in %s first.")
 local TEXT_NO_POINTS_YET = "No points yet"
 local TEXT_NOT_A_BUILD = ns.L("That is not a Naowh Forever talent build.")
+local TEXT_PASTE = ns.L("Paste a Naowh Forever talent build")
 local TEXT_ADD = ns.L("Add the %s build %s (%d points)?")
 local TEXT_IMPORTED = ns.L("Imported %s.")
 local TEXT_IMPORTED_BUILD, TEXT_IMPORTED_SPEC = ns.L("Imported Build"), ns.L("Imported")
@@ -256,6 +258,10 @@ function Training.ImportBuild(text, onAdded)
         ns.Print(TEXT_IMPORTED:format(build.name))
         onAdded(classID, #(ns.TrainingBuilds[classID]) + #saved)
     end)
+end
+
+function Training.PromptImport(onAdded)
+    ns.PromptText(TEXT_PASTE, "", PASTE_MAX, function(text) Training.ImportBuild(text, onAdded) end)
 end
 
 local function RowOrder(tree)
