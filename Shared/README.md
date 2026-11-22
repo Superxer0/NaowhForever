@@ -57,9 +57,10 @@ Shared/
                    Professions' side panels and QoL's Scan on Opening
   UI/Parts.lua     the small parts: icons in text (Parts.Inline), smooth textures, hover cards (Parts.Tip,
                    Parts.TipLines), the chevron, links (Parts.FlipLink puts the chevron first, pointing
-                   back: the Action Bars window's back link), icon buttons, the flat hover and pressed look
-                   on a bar button (Parts.Press: the item bars, Blessings, Gear Set and Trinket bars, Group
-                   Buttons), a short label in a pill of its color
+                   back: the Action Bars window's back link), icon buttons, the logo button (Parts.LogoButton:
+                   the Town Pins button on the world map, Next Talent's on the talent window), the flat hover
+                   and pressed look on a bar button (Parts.Press: the item bars, Blessings, Gear Set and
+                   Trinket bars, Group Buttons), a short label in a pill of its color
                    (Parts.Pill, Parts.SetPill: Group Inspect's "NF"), the worn bar, the Wowhead copy card
   UI/Menus.lua     every right-click menu and dropdown (ns.ContextMenu, ns.DropdownMenu; ns.MenuOpen for
                    Parts.Tip): a list of our own, never the game's menus
@@ -578,6 +579,9 @@ What a comment in the code used to say, in short. The house rules behind it are 
   point lines up with the text above. A disabled link rests muted and says why on hover.
 - An icon button's `margin` is the empty edge on the right of its image: it moves out by it, so
   the shapes, not their boxes, line up.
+- The logo button sits on top of a busy window (the world map, the talent trees), so it has a
+  dark fill (`LOGO_FILL`, 0.9) and a border, with the logo `LOGO_INSET` (4) in. Its border turns
+  the accent on hover, and stays so while what it opens is open (`Parts.LightLogoButton`).
 - The game cannot put text on the clipboard for an addon, so copying opens a copy card with the
   text selected (`Parts.CopyWowhead`, `ns.ShowCopyLine`).
 - An item's marks are the same wherever one is drawn (the BiS List's paperdoll, the character
