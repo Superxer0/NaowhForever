@@ -33,7 +33,7 @@ local TEXT_MORE = "..."
 local TEXT_FOLLOWING = ns.L("You follow %s, so its points are spent for you. Stop following it in the Builds tab "
     .. "to pick them yourself.")
 
-local classModel = { rows = {}, count = 0 }
+local classModel = { rows = {}, count = 0, preview = {}, previewCount = 0 }
 local learnedRanks = {}
 local buildRanks = {}
 local extraNames = {}
@@ -111,17 +111,28 @@ local function ClearModel(model)
     model.followed = nil
     model.namesLoading = false
     model.count = 0
+    model.previewCount = 0
+end
+
+local function EntryAt(list, place)
+    local entry = list[place]
+    if not entry then
+        entry = {}
+        list[place] = entry
+    end
+    return entry
 end
 
 local function AddRow(model)
     local place = model.count + 1
     model.count = place
-    local row = model.rows[place]
-    if not row then
-        row = {}
-        model.rows[place] = row
-    end
-    return row, place
+    return EntryAt(model.rows, place), place
+end
+
+local function AddPreviewTalent(model, node)
+    local place = model.previewCount + 1
+    model.previewCount = place
+    EntryAt(model.preview, place).node = node
 end
 
 local function AddClassRow(model, tree, node, rank, spent)
@@ -164,6 +175,14 @@ local function ExtraText(tree)
     return TEXT_NOT_IN_BUILD:format(ns.Color(Style.WARN_RGB, list))
 end
 
+local function FillPreviewRanks(model, tree)
+    for place = 1, model.previewCount do
+        local talent = model.preview[place]
+        talent.ranks = buildRanks[talent.node]
+        talent.maxRanks = tree.talents[talent.node][NODE_RANKS]
+    end
+end
+
 local function ReadBuild(model, tree, build)
     local ranks = Training.Ranks(tree.talents, true, learnedRanks)
     if not ranks then return false end
@@ -173,6 +192,7 @@ local function ReadBuild(model, tree, build)
     for _, node in ipairs(build.points) do
         local rankWanted = (buildRanks[node] or 0) + 1
         buildRanks[node] = rankWanted
+        if rankWanted == 1 then AddPreviewTalent(model, node) end
         local rankHave = learnedRanks[node] or 0
         if rankHave >= rankWanted then
             learned = learned + 1
@@ -180,6 +200,7 @@ local function ReadBuild(model, tree, build)
             AddClassRow(model, tree, node, rankWanted, spent)
         end
     end
+    FillPreviewRanks(model, tree)
     model.progress = TEXT_PROGRESS:format(learned, #build.points)
     model.extra = ExtraText(tree)
     return true

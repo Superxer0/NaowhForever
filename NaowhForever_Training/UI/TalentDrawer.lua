@@ -1,4 +1,4 @@
--- TalentDrawer.lua: the side panel beside a talent window (build picker, next talents, glow switch) and its button.
+-- TalentDrawer.lua: the side panel beside a talent window (build picker, next talents, switches) and its button.
 local ns = _G.NaowhForever
 
 local T = ns.THEME
@@ -21,6 +21,7 @@ local BUTTON_SIZE = 32
 local NO_SEARCH_X, NO_SEARCH_Y, NO_SEARCH_LEVEL = -30, -4, 20
 local MAX_FRAME_LEVEL = 9000
 local GLOW_KEY = "talentOverlayGlow"
+local PREVIEW_KEY = "talentOverlayPreview"
 local NO_EVENTS = {}
 local BUILDS_TAB = "builds"
 local TEXT_BUILD = "Build"
@@ -36,6 +37,8 @@ local TEXT_FOLLOWED = ns.L("%s (followed)")
 local TEXT_NO_PICK = ns.L("No build picked")
 local TEXT_GLOW = ns.L("Glow on the Next Talent")
 local TEXT_GLOW_TIP = ns.L("A glow around the next talent's button that pulses while you have a point to spend.")
+local TEXT_PREVIEW = ns.L("Preview Full Build")
+local TEXT_PREVIEW_TIP = ns.L("Lights every talent the build takes, with how many ranks it takes in each.")
 local TEXT_SHOW_HIDE = ns.L("Show or hide this panel.")
 
 local summaryPieces = {}
@@ -46,14 +49,6 @@ end
 
 local function FullOpacity()
     return 1
-end
-
-local function GlowOn()
-    return S.Get(GLOW_KEY)
-end
-
-local function SetGlow(on)
-    S.Set(GLOW_KEY, on)
 end
 
 local function OpenBuilds()
@@ -177,23 +172,37 @@ local function SetLaterTalent(row, talent)
     return ROW_H
 end
 
-local function NewGlowRow(view)
+local function NewSwitchRow(view, key, text, tip)
+    local function IsOn()
+        return S.Get(key)
+    end
+    local function SetOn(on)
+        S.Set(key, on)
+    end
     local row = CreateFrame("Frame", nil, view)
     row:EnableMouse(true)
-    local toggle = UI.BuildToggleControl(row, LevelAbove(row, CONTROL_LEVEL), GlowOn, SetGlow)
+    local toggle = UI.BuildToggleControl(row, LevelAbove(row, CONTROL_LEVEL), IsOn, SetOn)
     toggle:SetPoint("RIGHT")
     local label = ns.Font(row, St.TEXT_SIZE, nil, T.fg)
     label:SetJustifyH("LEFT")
     label:SetWordWrap(false)
     label:SetPoint("LEFT")
     label:SetPoint("RIGHT", toggle, "LEFT", -LABEL_GAP, 0)
-    label:SetText(TEXT_GLOW)
-    ns.Tooltip(row, TEXT_GLOW, TEXT_GLOW_TIP)
+    label:SetText(text)
+    ns.Tooltip(row, text, tip)
     row.toggle = toggle
     return row
 end
 
-local function SetGlowRow(row)
+local function NewGlowRow(view)
+    return NewSwitchRow(view, GLOW_KEY, TEXT_GLOW, TEXT_GLOW_TIP)
+end
+
+local function NewPreviewRow(view)
+    return NewSwitchRow(view, PREVIEW_KEY, TEXT_PREVIEW, TEXT_PREVIEW_TIP)
+end
+
+local function SetSwitchRow(row)
     row.toggle._refreshValue()
     return ROW_H
 end
@@ -229,6 +238,7 @@ function Draw:Redraw()
     end
     self:Section(TEXT_OPTIONS)
     self:Add("glow")
+    self:Add("preview")
     self:Fit(NO_EVENTS)
 end
 
@@ -237,7 +247,8 @@ local function NewBody(scroll)
     kinds.picker = { New = NewPicker, Set = SetPicker }
     kinds.nextTalent = { New = NewNextTalent, Set = SetNextTalent }
     kinds.laterTalent = { New = NewLaterTalent, Set = SetLaterTalent }
-    kinds.glow = { New = NewGlowRow, Set = SetGlowRow }
+    kinds.glow = { New = NewGlowRow, Set = SetSwitchRow }
+    kinds.preview = { New = NewPreviewRow, Set = SetSwitchRow }
     return Shared.View.New(scroll, kinds, Draw)
 end
 
@@ -299,7 +310,8 @@ function Next.DrawerSummary(model)
     AddPiece(model.progress)
     AddPiece(model.extra)
     AddPiece(model.follow)
-    AddPiece(GlowOn())
+    AddPiece(S.Get(GLOW_KEY))
+    AddPiece(S.Get(PREVIEW_KEY))
     for place = 1, model.count do
         local row = model.rows[place]
         AddPiece(row.icon)

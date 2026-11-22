@@ -14,9 +14,10 @@ local SPELL_EVENT = "SPELL_DATA_LOAD_RESULT"
 local MAX_RETRIES = 10
 local GLOW_KEY = "talentOverlayGlow"
 local DRAWER_KEY = "talentOverlayDrawer"
+local PREVIEW_KEY = "talentOverlayPreview"
 local TEXT_TITLE = ns.L("Talent Overlay")
 
-local view = { title = TEXT_TITLE, panelOpen = true }
+local view = { title = TEXT_TITLE, panelOpen = true, previewMarks = {} }
 
 local events
 local installed = false
@@ -92,9 +93,17 @@ local function OnWindowAddOnLoaded()
     Schedule()
 end
 
+local function HidePreview(fromPlace)
+    local marks = view.previewMarks
+    for place = fromPlace, #marks do
+        Next.PlaceMark(marks[place], nil)
+    end
+end
+
 local function ClearView()
     Next.HideDrawer(view, false)
     Next.PlaceMark(view.mark, nil)
+    HidePreview(1)
     view.open = false
 end
 
@@ -127,6 +136,27 @@ local function UpdateMark(window, model)
     if not button then view.buttonMissing = true end
 end
 
+local function UpdatePreview(window, model)
+    if not S.Get(PREVIEW_KEY) then
+        HidePreview(1)
+        return
+    end
+    local buttons = Next.ButtonsByNode(window)
+    local marks = view.previewMarks
+    for place = 1, model.previewCount do
+        local talent = model.preview[place]
+        local mark = marks[place]
+        if not mark then
+            mark = Next.NewPreviewMark()
+            marks[place] = mark
+        end
+        local button = buttons[talent.node]
+        Next.PlacePreviewMark(mark, button, talent)
+        if not button then view.buttonMissing = true end
+    end
+    HidePreview(model.previewCount + 1)
+end
+
 local function UpdateView()
     view.buttonMissing = false
     view.namesLoading = false
@@ -147,6 +177,7 @@ local function UpdateView()
     view.namesLoading = model.namesLoading
     UpdateDrawer(window, model)
     UpdateMark(window, model)
+    UpdatePreview(window, model)
 end
 
 function Refresh()
@@ -167,6 +198,7 @@ local function Quiet()
     listeningForSpellNames = false
     Next.HideDrawer(view, true)
     if view.mark then Next.PlaceMark(view.mark, nil) end
+    HidePreview(1)
     view.open = false
     view.docked = nil
     view.paintedSummary = nil
@@ -197,7 +229,7 @@ local function OnSettingChanged(key)
     elseif key == DRAWER_KEY then
         view.panelOpen = true
         Schedule()
-    elseif key == GLOW_KEY then
+    elseif key == GLOW_KEY or key == PREVIEW_KEY then
         Schedule()
     end
 end

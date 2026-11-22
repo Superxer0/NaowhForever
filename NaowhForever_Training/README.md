@@ -47,8 +47,8 @@ NaowhForever_Training/
     TrainerPanel.lua the Panel at the Trainer
     DemonTrainer.lua Demon Books' marks at the merchant and the line in a book's tooltip
     Spellbook.lua    the Trainable tab under the spellbook and its panel
-    TalentWindows.lua the open talent window (Blizzard's or EllesmereUI's), and a talent's button
-    TalentMark.lua   the glow on the next talent
+    TalentWindows.lua the open talent window (Blizzard's or EllesmereUI's), and its talents' buttons
+    TalentMark.lua   the glow on the next talent, and the Preview Full Build glow
     TalentDrawer.lua the side panel beside the talent window, and the button that opens it
     TalentOverlay.lua turns the Talent Overlay on and off, and redraws it while a talent window is open
     SettingsPage.lua its settings page (Training Planner/Settings), declared as cards
@@ -214,9 +214,14 @@ view files and the window share.
   theme's accent. Nothing of the button's is changed or hidden. The windows' OnShow and OnHide are
   post-hooked (HookScript), and EllesmereUI's window, made the first time it opens, is found through a
   hooksecurefunc on `EllesmereUI.RegisterEscapeClose`.
+- Preview Full Build (off by default) lights every talent the build takes, learned or not, with a still
+  glow and the build's ranks out of the talent's (`3/5`) in its top right corner. Its glows sit one frame
+  level under the next talent's (`PREVIEW_ABOVE`), so that one stays on top. They are made the first time
+  the preview is on, one per talent, and reused after. On EllesmereUI's window one search fills a
+  node-to-button table for every talent (`Next.ButtonsByNode`), not one search per talent.
 - The panel is a `Parts.SidePanel` on UIParent beside the window, so its build menu draws over the talent
-  tree and not under it. Its rows are drawn by the shared row engine (`ns.Shared.View`), with four kinds of
-  its own: the build picker, the next talent, the talents after it and the glow switch.
+  tree and not under it. Its rows are drawn by the shared row engine (`ns.Shared.View`), with five kinds of
+  its own: the build picker, the next talent, the talents after it, and the glow and preview switches.
 - The panel's Build title has two links (`SectionLink`): Import, the planner's own paste prompt
   (`Training.PromptImport`), which picks the build once it is added; and Open Builds, the planner's Builds
   tab, to rename, edit or delete one. The picker lists only your own class's builds, since the glow can

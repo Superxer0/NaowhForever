@@ -1,7 +1,8 @@
--- TalentMark.lua: the glow on the next talent, a border in its button's shape that pulses while a point is free.
+-- TalentMark.lua: the talent glows, a border in each button's shape; the next talent's pulses while a point is free.
 local ns = _G.NaowhForever
 
 local T = ns.THEME
+local St = ns.Shared.Style
 local Next = ns.Training.Next
 
 local RING_ALPHA, SHINE_ALPHA, OUTER_ALPHA, HALO_ALPHA = 1, 0.8, 0.5, 0.7
@@ -9,7 +10,9 @@ local OUTER_SCALE, FALLBACK_SCALE, HALO_SCALE = 1.14, 1.3, 1.6
 local WAIT_ALPHA = 0.75
 local PULSE_LOW, PULSE_TIME = 0.45, 0.7
 local EDGE_W, EDGE_OUT = 2, 3
-local LEVEL_ABOVE, MAX_FRAME_LEVEL = 10, 9000
+local LEVEL_ABOVE, PREVIEW_ABOVE, MAX_FRAME_LEVEL = 10, 9, 9000
+local RANKS_X, RANKS_Y = 3, 3
+local TEXT_RANKS = ns.L("%d/%d")
 
 local function Tint(texture, alpha)
     local color = T.accentSoft
@@ -138,9 +141,10 @@ local function HaloArt(mark, button)
     mark.halo:SetSize(width, height)
 end
 
-function Next.NewMark()
+function Next.NewMark(levelAbove)
     local mark = CreateFrame("Frame")
     mark:Hide()
+    mark.levelAbove = levelAbove or LEVEL_ABOVE
     mark.halo = NewLayer(mark, "BACKGROUND", true)
     mark.ring = NewLayer(mark, "ARTWORK", false)
     mark.shine = NewLayer(mark, "OVERLAY", true)
@@ -162,7 +166,7 @@ function Next.PlaceMark(mark, button, ready)
         mark:SetAllPoints(button)
         mark.button = button
     end
-    local level = math.min(button:GetFrameLevel() + LEVEL_ABOVE, MAX_FRAME_LEVEL)
+    local level = math.min(button:GetFrameLevel() + mark.levelAbove, MAX_FRAME_LEVEL)
     mark:SetFrameLevel(level)
     ShapeArt(mark, button)
     HaloArt(mark, button)
@@ -178,6 +182,20 @@ function Next.PlaceMark(mark, button, ready)
         mark:SetAlpha(WAIT_ALPHA)
     end
     mark:Show()
+end
+
+function Next.NewPreviewMark()
+    local mark = Next.NewMark(PREVIEW_ABOVE)
+    local ranks = ns.Font(mark, St.SMALL_SIZE, "OUTLINE", T.accentSoft)
+    ranks:SetPoint("TOPRIGHT", RANKS_X, RANKS_Y)
+    mark.ranks = ranks
+    return mark
+end
+
+function Next.PlacePreviewMark(mark, button, talent)
+    Next.PlaceMark(mark, button, false)
+    if not button then return end
+    mark.ranks:SetText(TEXT_RANKS:format(talent.ranks, talent.maxRanks))
 end
 
 function Next.ButtonFor(mark, window, node)

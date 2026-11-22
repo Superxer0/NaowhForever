@@ -10,7 +10,8 @@ local ORDER_TALENT_OVERLAY = 35
 local BUILDS_TAB = "builds"
 local TEXT_OFF = ns.L("Turn on the Training Planner")
 local TEXT_BUILDS_SEARCH = ns.L("talents talent points follow import export share auto spend")
-local TEXT_OVERLAY_SEARCH = ns.L("talents talent window talent overlay next talent glow highlight build ellesmere")
+local TEXT_OVERLAY_SEARCH =
+    ns.L("talents talent window talent overlay next talent glow highlight preview full build ellesmere")
 local TEXT_OPEN = "Open Training Planner"
 local TEXT_TRAIN_NOW = ns.L("%d %s to train now, %s")
 local TEXT_SPELL, TEXT_SPELLS = ns.L("spell"), ns.L("spells")
@@ -195,6 +196,8 @@ page:Card({
     rows = {
         { key = "talentOverlayGlow", label = "Glow on the Next Talent", toggle = true,
           help = "A glow around the next talent's button that pulses while you have a point to spend." },
+        { key = "talentOverlayPreview", label = "Preview Full Build", toggle = true,
+          help = "Lights every talent the build takes, with how many ranks it takes in each." },
         { key = "talentOverlayDrawer", label = "Talent Window Panel", toggle = true,
           help = "A button on the talent window that opens a panel to pick a build and see its next talents." },
     },

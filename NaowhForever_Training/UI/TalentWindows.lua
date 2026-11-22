@@ -1,4 +1,4 @@
--- TalentWindows.lua: finds the open talent window (Blizzard's or EllesmereUI's) and a talent's button.
+-- TalentWindows.lua: finds the open talent window (Blizzard's or EllesmereUI's) and its talents' buttons.
 local ns = _G.NaowhForever
 
 local Next = ns.Training.Next
@@ -7,6 +7,8 @@ local SCAN_DEPTH = 6
 
 local classWindow = {}
 local childLists = {}
+local scannedButtons = {}
+local NO_BUTTONS = {}
 
 local function NodeOf(button)
     if button.GetNodeID then return button:GetNodeID() end
@@ -43,6 +45,18 @@ local function Scan(frame, node, depth)
     return nil
 end
 
+local function ScanAll(frame, buttons, depth)
+    if depth > SCAN_DEPTH then return end
+    local children = ChildrenAtDepth(frame, depth)
+    for _, child in ipairs(children) do
+        if child:IsShown() then
+            local node = NodeOf(child)
+            if node and not buttons[node] then buttons[node] = child end
+            ScanAll(child, buttons, depth + 1)
+        end
+    end
+end
+
 local function BlizzardFind(page, node)
     local buttons = page.nodeIDToButton
     if not buttons then return nil end
@@ -76,6 +90,15 @@ end
 function Next.FindButton(window, node)
     if window.scan then return Scan(window.content, node, 0) end
     return BlizzardFind(window.content, node)
+end
+
+function Next.ButtonsByNode(window)
+    if window.scan then
+        wipe(scannedButtons)
+        ScanAll(window.content, scannedButtons, 0)
+        return scannedButtons
+    end
+    return window.content.nodeIDToButton or NO_BUTTONS
 end
 
 function Next.EachTalentPage(fn)
