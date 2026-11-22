@@ -197,25 +197,35 @@ view files and the window share.
 - While it is on, the talent events are registered only while a talent window is open, and
   SPELL_DATA_LOAD_RESULT only while a talent's name is still loading. A burst of events draws once, a frame
   later. The model tables and their rows are reused, so a redraw makes no new tables.
-- A talent's rank is the larger of its `currentRank` and `activeRank`: `currentRank` changes as you click a
-  point in, before you apply, so the glow moves with your clicks.
+- Next Talent reads a talent's `currentRank` (`Training.Ranks` with unapplied points), not its
+  `activeRank`: `currentRank` changes as you click a point in or take one back, before you apply, so the
+  glow follows your clicks both ways.
+- The glow pulses only once the next talent can be bought (`canPurchaseRank`): your level gives the point,
+  but the talent can still be locked behind a row or the talent it needs. Until then it sits still and the
+  panel says it is locked for now.
 - Picking a build in the panel only lights it. It does not follow it, so nothing is bought for you. The pick
   is kept per character, by GUID (`trainingNextPick`), with the class it was made on. With no pick, the panel
   lights the build you follow and says that following spends its points for you.
-- A talent's button is found with the game's own lookups (GetTalentButtonByNodeID, then
-  EnumerateAllTalentButtons). EllesmereUI's Classic Talents has neither, so its shown children are searched,
-  at most 6 deep. A button not drawn yet is looked for again on the next frames, at most 10 times
-  (`MAX_RETRIES`).
+- On Blizzard's talent window a talent's button comes from the window's own `nodeIDToButton`, which holds
+  every active button. EllesmereUI's Classic Talents has no such table, so its shown children are searched,
+  at most 6 deep, into one reused list per depth. A button not drawn yet is looked for again on the next
+  frames, at most 10 times (`MAX_RETRIES`).
 - The glow is a frame of its own on the talent's button, in the button's own border shape, tinted with the
   theme's accent. Nothing of the button's is changed or hidden. The windows' OnShow and OnHide are
   post-hooked (HookScript), and EllesmereUI's window, made the first time it opens, is found through a
   hooksecurefunc on `EllesmereUI.RegisterEscapeClose`.
 - The panel is a `Parts.SidePanel` on UIParent beside the window, so its build menu draws over the talent
-  tree and not under it.
-- The panel's button copies the Town Pins button on the world map: 32 square, the logo 4 in, on a 0.9 dark
-  fill, so it stands out on the talent window. Its border stays lit while the panel is open. Like the Town
-  Pins button in the map's corner, it sits in the corner of the talent trees, under the Unspent Talents
-  count: 64 below the search box's bottom right corner (`UNDER_SEARCH`).
+  tree and not under it. Its rows are drawn by the shared row engine (`ns.Shared.View`), with four kinds of
+  its own: the build picker, the next talent, the talents after it and the glow switch.
+- The Talent Window Panel setting turns the button and the panel on or off together. Whether the panel is
+  open is kept apart from it, for the session only, as the Town Pins panel on the map is: it opens with the
+  talent window, the button or the panel's x closes it, and the button opens it again. Another side panel
+  opening beside the window closes it the same way, since only one side panel shows at a time.
+- The panel's button is the shared logo button (`Parts.LogoButton`), the same as the Town Pins button on
+  the world map, so it stands out on the talent window. Its border stays lit while the panel is open
+  (`Parts.LightLogoButton`). Like the Town Pins button in the map's corner, it sits in the corner of the
+  talent trees, under the Unspent Talents count: 64 below the search box's bottom right corner
+  (`UNDER_SEARCH`).
 - In the panel, the next talent's name and its cost sit `BIG_TEXT_DROP` (1px) inside the top and bottom of
   its icon, where the Naowh font's letters line up with the icon's edges.
 - Under the Gamepad interface style Next Talent stays off, as the Spellbook Tab does: that style moves

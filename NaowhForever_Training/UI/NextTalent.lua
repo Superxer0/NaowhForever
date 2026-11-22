@@ -16,7 +16,7 @@ local GLOW_KEY = "nextTalentGlow"
 local DRAWER_KEY = "nextTalentDrawer"
 local TEXT_TITLE = ns.L("Next Talent")
 
-local view = { title = TEXT_TITLE, openKey = DRAWER_KEY }
+local view = { title = TEXT_TITLE, panelOpen = true }
 
 local events
 local installed = false
@@ -99,8 +99,12 @@ local function ClearView()
 end
 
 local function UpdateDrawer(window, model)
-    Next.PaintButton(view)
     if not S.Get(DRAWER_KEY) then
+        Next.HideDrawer(view, true)
+        return
+    end
+    Next.ShowButton(view)
+    if not view.panelOpen then
         Next.HideDrawer(view, false)
         return
     end
@@ -190,7 +194,10 @@ end
 local function OnSettingChanged(key)
     if key == "enabled" or key == "nextTalent" then
         Apply()
-    elseif key == GLOW_KEY or key == DRAWER_KEY then
+    elseif key == DRAWER_KEY then
+        view.panelOpen = true
+        Schedule()
+    elseif key == GLOW_KEY then
         Schedule()
     end
 end

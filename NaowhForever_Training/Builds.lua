@@ -79,12 +79,26 @@ function Training.Builds(classID)
     return list
 end
 
-function Training.Ranks(talents)
+function Training.Ranks(talents, withUnapplied, into)
     local config = C_ClassTalents.GetActiveConfigID()
     if not config then return nil end
-    local ranks = {}
-    for node in pairs(talents) do ranks[node] = C_Traits.GetNodeInfo(config, node).activeRank end
+    local ranks = into or {}
+    wipe(ranks)
+    for node in pairs(talents) do
+        local info = C_Traits.GetNodeInfo(config, node)
+        if withUnapplied then
+            ranks[node] = info.currentRank
+        else
+            ranks[node] = info.activeRank
+        end
+    end
     return ranks
+end
+
+function Training.Spent(ranks)
+    local total = 0
+    for _, rank in pairs(ranks) do total = total + rank end
+    return total
 end
 
 function Training.TalentEntry(classID, node)
@@ -413,9 +427,7 @@ end
 local function Spent(classID)
     local ranks = Training.Ranks(ns.TrainingBuilds[classID].talents)
     if not ranks then return nil end
-    local total = 0
-    for _, rank in pairs(ranks) do total = total + rank end
-    return total
+    return Training.Spent(ranks)
 end
 
 function Training.LearnFollowed()

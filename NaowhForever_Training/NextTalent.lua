@@ -23,6 +23,7 @@ local TEXT_SPEND_NOW = ns.L("spend it now")
 local TEXT_NOW = ns.L("now")
 local TEXT_AT_LEVEL = ns.L("at level %d")
 local TEXT_LVL = ns.L("lvl %d")
+local TEXT_LOCKED = ns.L("locked for now")
 local TEXT_PICK_ONE = ns.L("Pick a build above: one of Naowh's, or one you saved in the planner's Builds tab.")
 local TEXT_NOT_READY = ns.L("The talent tree is not ready yet.")
 local TEXT_ALL_LEARNED = ns.L("Every point in this build is learned.")
@@ -65,18 +66,12 @@ local function FollowedBuild(classID)
     return build
 end
 
-local function ReadLearnedRanks(talents)
-    wipe(learnedRanks)
+local function CanBuyNow(node)
     local config = C_ClassTalents.GetActiveConfigID()
-    if not config then return nil end
-    local spent = 0
-    for node in pairs(talents) do
-        local info = C_Traits.GetNodeInfo(config, node)
-        local rank = math.max(info.currentRank or 0, info.activeRank or 0)
-        learnedRanks[node] = rank
-        spent = spent + rank
-    end
-    return spent
+    if not config then return false end
+    local info = C_Traits.GetNodeInfo(config, node)
+    if info.canPurchaseRank then return true end
+    return false
 end
 
 local function LevelFor(spent, place)
@@ -84,8 +79,9 @@ local function LevelFor(spent, place)
     return FIRST_TALENT_LEVEL + pointNumber - 1
 end
 
-local function WhenText(level, ready, forBigRow)
+local function WhenText(level, ready, locked, forBigRow)
     if level > MAX_LEVEL then return ns.Color(Style.WARN_RGB, TEXT_NO_POINT) end
+    if locked then return ns.Color(Style.WARN_RGB, TEXT_LOCKED) end
     if ready and forBigRow then return ns.Color(Style.UP_RGB, TEXT_SPEND_NOW) end
     if ready then return ns.Color(Style.UP_RGB, TEXT_NOW) end
     if forBigRow then return ns.Color("muted", TEXT_AT_LEVEL:format(level)) end
@@ -135,14 +131,17 @@ local function AddClassRow(model, tree, node, rank, spent)
     local name, nameLoaded = SpellName(spellID)
     local level = LevelFor(spent, place)
     local myLevel = math.min(UnitLevel("player"), MAX_LEVEL)
-    local ready = level <= myLevel
+    local levelReached = level <= myLevel
+    local locked = false
+    if place == 1 and levelReached then locked = not CanBuyNow(node) end
+    local ready = levelReached and not locked
     local specName = tree.specs[talent[NODE_COLUMN]]
     row.node = node
     row.spellID = spellID
     row.icon = SpellIcon(spellID)
     row.name = TEXT_RANK:format(name, rank, talent[NODE_RANKS])
-    row.sub = TEXT_SPEC_WHEN:format(specName, WhenText(level, ready, true))
-    row.when = WhenText(level, ready, false)
+    row.sub = TEXT_SPEC_WHEN:format(specName, WhenText(level, ready, locked, true))
+    row.when = WhenText(level, ready, locked, false)
     row.ready = ready
     if not nameLoaded then model.namesLoading = true end
 end
@@ -166,8 +165,9 @@ local function ExtraText(tree)
 end
 
 local function ReadBuild(model, tree, build)
-    local spent = ReadLearnedRanks(tree.talents)
-    if not spent then return false end
+    local ranks = Training.Ranks(tree.talents, true, learnedRanks)
+    if not ranks then return false end
+    local spent = Training.Spent(learnedRanks)
     wipe(buildRanks)
     local learned = 0
     for _, node in ipairs(build.points) do

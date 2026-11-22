@@ -6,15 +6,34 @@ local Next = ns.Training.Next
 local SCAN_DEPTH = 6
 
 local classWindow = {}
+local childLists = {}
 
 local function NodeOf(button)
     if button.GetNodeID then return button:GetNodeID() end
     return button.nodeID
 end
 
+local function PutChildrenIn(list, ...)
+    wipe(list)
+    for index = 1, select("#", ...) do
+        list[index] = select(index, ...)
+    end
+end
+
+local function ChildrenAtDepth(frame, depth)
+    local list = childLists[depth]
+    if not list then
+        list = {}
+        childLists[depth] = list
+    end
+    PutChildrenIn(list, frame:GetChildren())
+    return list
+end
+
 local function Scan(frame, node, depth)
     if depth > SCAN_DEPTH then return nil end
-    for _, child in ipairs({ frame:GetChildren() }) do
+    local children = ChildrenAtDepth(frame, depth)
+    for _, child in ipairs(children) do
         if child:IsShown() then
             if NodeOf(child) == node then return child end
             local found = Scan(child, node, depth + 1)
@@ -24,25 +43,10 @@ local function Scan(frame, node, depth)
     return nil
 end
 
-local function FindInButtonPool(page, node)
-    for key, value in page:EnumerateAllTalentButtons() do
-        local button = value
-        if type(key) == "table" then button = key end
-        if type(button) == "table" and NodeOf(button) == node then return button end
-    end
-    return nil
-end
-
 local function BlizzardFind(page, node)
-    if page.GetTalentButtonByNodeID then
-        local button = page:GetTalentButtonByNodeID(node)
-        if button then return button end
-    end
-    if page.EnumerateAllTalentButtons then
-        local button = FindInButtonPool(page, node)
-        if button then return button end
-    end
-    return Scan(page, node, 0)
+    local buttons = page.nodeIDToButton
+    if not buttons then return nil end
+    return buttons[node]
 end
 
 local function FillWindow(window, outer, content, search, scan)

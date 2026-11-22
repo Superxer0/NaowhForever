@@ -196,6 +196,6 @@ page:Card({
         { key = "nextTalentGlow", label = "Glow on the Next Talent", toggle = true,
           help = "A glow around the next talent's button that pulses while you have a point to spend." },
         { key = "nextTalentDrawer", label = "Talent Window Panel", toggle = true,
-          help = "A panel beside the talent window to pick a build and see its next talents." },
+          help = "A button on the talent window that opens a panel to pick a build and see its next talents." },
     },
 })
